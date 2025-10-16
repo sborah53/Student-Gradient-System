@@ -1,0 +1,5 @@
+{
+  "name": "Student Grading System",
+  "description": "An easy-to-use application for calculating student grades using absolute or relative grading methods. Paste student data or upload a CSV file to get started.",
+  "requestFramePermissions": []
+}
