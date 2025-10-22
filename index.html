@@ -317,41 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function setupGradeSliders() {
         const slidersContainer = getEl('grade-sliders');
-        let prevSliderValue = 101;
-        const initialCutoffs = { 'A+': 99, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30, 'F': 30 };
-        slidersContainer.innerHTML = ''; // Clear existing
-        PASSING_GRADES.forEach(grade => {
-            const cutoff = initialCutoffs[grade];
-            const max = prevSliderValue - 1;
-            const sliderHTML = `
-                <div class="grid grid-cols-4 items-center gap-2">
-                    <label class="font-medium col-span-1">${grade}</label>
-                    <input type="range" id="slider-${grade}" data-grade="${grade}" min="${initialCutoffs['F']}" max="${max}" value="${cutoff}" class="w-full col-span-2">
-                    <span id="value-${grade}" class="font-mono text-indigo-600 text-right col-span-1">≥ ${cutoff}</span>
-                </div>`;
-            slidersContainer.innerHTML += sliderHTML;
-            prevSliderValue = cutoff;
-        });
-
-        PASSING_GRADES.forEach(grade => {
-            const slider = getEl(`slider-${grade}`);
-            slider.addEventListener('input', (e) => {
-                const currentValue = parseInt(e.target.value);
-                getEl(`value-${grade}`).textContent = `≥ ${currentValue}`;
-
-                // Adjust max of lower grade sliders
-                const gradeIndex = PASSING_GRADES.indexOf(grade);
-                if (gradeIndex < PASSING_GRADES.length - 1) {
-                    const lowerGrade = PASSING_GRADES[gradeIndex + 1];
-                    const lowerSlider = getEl(`slider-${lowerGrade}`);
-                    lowerSlider.max = currentValue - 1;
-                    if (parseInt(lowerSlider.value) >= currentValue) {
-                        lowerSlider.value = currentValue - 1;
-                        getEl(`value-${lowerGrade}`).textContent = `≥ ${lowerSlider.value}`;
-                    }
-                }
-            });
-        });
+        const defaultCutoffs = { 'A+': 99, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30 };
+        generateSliderGroup(slidersContainer, 'slider-', defaultCutoffs);
     }
 
     function setupEventListeners() {
@@ -542,23 +509,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- GRADING LOGIC ---
-    function gradeAbsolute(useScaledMarks = false) {
-        const cutoffs = {};
-        PASSING_GRADES.forEach(grade => {
-            cutoffs[grade] = parseInt(getEl(`slider-${grade}`).value);
-        });
-        
-        students.forEach(student => {
-            const markToGrade = useScaledMarks ? student.scaledMarks : student.marks;
-            let assignedGrade = 'F';
-            for (const grade of PASSING_GRADES) {
-                if (markToGrade >= cutoffs[grade]) {
-                    assignedGrade = grade;
-                    break; 
-                }
-            }
-            setStudentGrade(student, assignedGrade);
-        });
+    function gradeAbsolute() {
+        gradeFromCutoffs(false, 'slider-');
     }
 
     function gradeRelative() {
@@ -633,10 +585,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 const range = maxMark - minMark;
                 if (range > 0) {
                      students.forEach(s => s.scaledMarks = ((s.marks - minMark) / range) * 100);
+                } else {
+                     students.forEach(s => s.scaledMarks = 100);
                 }
-                gradeAbsolute(true);
+                gradeFromCutoffs(true, 'curve-slider-');
                 break;
         }
+    }
+
+    function gradeFromCutoffs(useScaledMarks, prefix) {
+        const cutoffs = {};
+        PASSING_GRADES.forEach(grade => {
+            cutoffs[grade] = parseInt(getEl(`${prefix}${grade}`).value);
+        });
+
+        for (let i = 0; i < PASSING_GRADES.length - 1; i++) {
+            if (cutoffs[PASSING_GRADES[i]] <= cutoffs[PASSING_GRADES[i+1]]) {
+                throw new Error(`Cutoff for ${PASSING_GRADES[i]} must be greater than ${PASSING_GRADES[i+1]}.`);
+            }
+        }
+
+        students.forEach(student => {
+            const markToGrade = useScaledMarks ? student.scaledMarks : student.marks;
+            let assignedGrade = 'F';
+            for (const grade of PASSING_GRADES) {
+                if (markToGrade >= cutoffs[grade]) {
+                    assignedGrade = grade;
+                    break;
+                }
+            }
+            setStudentGrade(student, assignedGrade);
+        });
     }
     
     // --- UTILITY & HELPER FUNCTIONS ---
@@ -679,6 +658,42 @@ document.addEventListener('DOMContentLoaded', () => {
         student.grade = grade;
         student.points = gradeInfo.points;
         student.remarks = gradeInfo.remarks;
+    }
+
+    function generateSliderGroup(container, prefix, defaultCutoffs) {
+        container.innerHTML = '';
+        let prevSliderValue = 101;
+        PASSING_GRADES.forEach(grade => {
+            const cutoff = defaultCutoffs[grade];
+            const max = prevSliderValue - 1;
+            const sliderHTML = `
+                <div class="grid grid-cols-4 items-center gap-2">
+                    <label class="font-medium col-span-1">${grade}</label>
+                    <input type="range" id="${prefix}${grade}" data-grade="${grade}" min="${defaultCutoffs['C-']}" max="${max}" value="${cutoff}" class="w-full col-span-2">
+                    <span id="value-${prefix}${grade}" class="font-mono text-indigo-600 text-right col-span-1">≥ ${cutoff}</span>
+                </div>`;
+            container.innerHTML += sliderHTML;
+            prevSliderValue = cutoff;
+        });
+
+        PASSING_GRADES.forEach(grade => {
+            const slider = getEl(`${prefix}${grade}`);
+            slider.addEventListener('input', (e) => {
+                const currentValue = parseInt(e.target.value);
+                getEl(`value-${prefix}${grade}`).textContent = `≥ ${currentValue}`;
+
+                const gradeIndex = PASSING_GRADES.indexOf(grade);
+                if (gradeIndex < PASSING_GRADES.length - 1) {
+                    const lowerGrade = PASSING_GRADES[gradeIndex + 1];
+                    const lowerSlider = getEl(`${prefix}${lowerGrade}`);
+                    lowerSlider.max = currentValue - 1;
+                    if (parseInt(lowerSlider.value) >= currentValue) {
+                        lowerSlider.value = currentValue - 1;
+                        getEl(`value-${prefix}${lowerGrade}`).textContent = `≥ ${lowerSlider.value}`;
+                    }
+                }
+            });
+        });
     }
 
     // --- RENDERING FUNCTIONS ---
@@ -806,6 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 });
                 configHTML += `<p class="text-xs text-slate-500 pt-1">Example: If 'A' is at 15%, students from the (A+ percentile)th to 15th percentile get 'A'. Remainder get 'F'.</p>`;
+                container.innerHTML = configHTML;
                 break;
             case 'mean_sd':
                 configHTML = `<h4 class="font-semibold text-md">Mean & SD Cutoffs</h4><p class="text-sm text-slate-600">Set grade cutoffs based on Standard Deviations (SD) from the Mean.</p>`;
@@ -821,12 +837,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 });
                  configHTML += `<p class="text-xs text-slate-500 pt-1">Values can be negative. Remainder get 'F'.</p>`;
+                 container.innerHTML = configHTML;
                 break;
             case 'curve_scale':
-                configHTML = `<p class="text-sm text-slate-600 p-4 bg-slate-100 rounded-lg">This method rescales marks from 0-100 and then uses the <span class="font-bold text-indigo-600">'Absolute Cutoffs'</span> sliders for grading. Please adjust the sliders above.</p>`;
+                container.innerHTML = `<p class="text-sm text-slate-600 mb-4 bg-slate-100 p-3 rounded-lg">This method rescales marks from 0-100. Then, the cutoffs below are applied.</p>
+                                       <div id="curve-slider-container" class="space-y-2"></div>`;
+                const curveSliderContainer = getEl('curve-slider-container');
+                const curveDefaultCutoffs = { 'A+': 100, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30 };
+                generateSliderGroup(curveSliderContainer, 'curve-slider-', curveDefaultCutoffs);
                 break;
         }
-        container.innerHTML = configHTML;
         updateRelativeInfo();
     }
     
