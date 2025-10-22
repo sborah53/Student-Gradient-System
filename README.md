@@ -12,7 +12,7 @@
 ### Grading Methodologies
 
 #### 1. Absolute Grading
-Grades are assigned based on predefined score ranges that you set using the sliders. This method is straightforward and measures performance against a fixed scale. An optional "A+ Cap" can be applied to limit the number of A+ grades to a certain top percentage of the class, promoting exceptional distinction.
+Grades are assigned based on predefined score ranges that you set using the sliders. This method is straightforward and measures performance against a fixed scale, making it transparent and easy to understand.
 
 ---
 

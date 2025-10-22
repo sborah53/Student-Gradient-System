@@ -118,18 +118,6 @@
                             <div id="relative-info"></div>
                             <div id="relative-config-panel" class="mt-4 space-y-3"></div>
                         </div>
-
-                         <!-- A+ Cap -->
-                         <div id="aplus-cap-section" class="pt-4 border-t">
-                             <h3 class="font-semibold text-lg">A+ Grade Cap</h3>
-                             <div>
-                                <label for="aplus-cap-slider" class="block text-sm font-medium">Limit A+ to top % of students (Absolute only):</label>
-                                <div class="flex items-center space-x-2">
-                                    <input type="range" id="aplus-cap-slider" min="0" max="10" value="0" class="w-full">
-                                    <span id="aplus-cap-value" class="font-mono text-indigo-600">0%</span>
-                                </div>
-                            </div>
-                         </div>
                     </div>
                     <button id="compute-grades" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition transform hover:scale-105">Compute Grades</button>
                 </div>
@@ -208,7 +196,7 @@
                     <div class="space-y-6">
                         <div>
                             <h4 class="font-bold text-lg">1. Absolute Grading</h4>
-                            <p>Grades are assigned based on predefined score ranges that you set using the sliders. This method is straightforward and measures performance against a fixed scale. An optional "A+ Cap" can be applied to limit the number of A+ grades to a certain top percentage of the class, promoting exceptional distinction.</p>
+                            <p>Grades are assigned based on predefined score ranges that you set using the sliders. This method is straightforward and measures performance against a fixed scale, making it transparent and easy to understand.</p>
                         </div>
                          <div>
                             <h4 class="font-bold text-lg">2. Relative Grading</h4>
@@ -330,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupGradeSliders() {
         const slidersContainer = getEl('grade-sliders');
         let prevSliderValue = 101;
-        const initialCutoffs = { 'A+': 95, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30, 'F': 30 };
+        const initialCutoffs = { 'A+': 99, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30, 'F': 30 };
         slidersContainer.innerHTML = ''; // Clear existing
         PASSING_GRADES.forEach(grade => {
             const cutoff = initialCutoffs[grade];
@@ -385,10 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('relative-method').addEventListener('change', () => {
             updateRelativeInfo();
             updateRelativeConfigPanel();
-        });
-
-        getEl('aplus-cap-slider').addEventListener('input', (e) => {
-            getEl('aplus-cap-value').textContent = `${e.target.value}%`;
         });
     }
     
@@ -503,9 +487,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (gradingSuccessful) {
-            if (scheme === 'absolute') {
-                applyAPlusCap();
-            }
             renderTable();
             updateGradePieChart();
             updateGradeHistogram();
@@ -658,28 +639,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function applyAPlusCap() {
-        const capPercent = parseInt(getEl('aplus-cap-slider').value) / 100;
-        if (capPercent === 0) return; // Skip if cap is disabled
-
-        const capNumber = Math.max(1, Math.round(students.length * capPercent));
-
-        const highAchievers = students
-            .filter(s => s.grade === 'A+' || s.grade === 'A')
-            .sort((a, b) => b.marks - a.marks);
-        
-        highAchievers.forEach((student, index) => {
-            if (index < capNumber) {
-                setStudentGrade(student, 'A+');
-            } else {
-                // Only downgrade if their original grade was A+
-                if (student.grade === 'A+') {
-                   setStudentGrade(student, 'A');
-                }
-            }
-        });
-    }
-
     // --- UTILITY & HELPER FUNCTIONS ---
     function findCsvHeaders(headers) {
         const mapping = {};
@@ -818,7 +777,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedScheme = event.target.value;
         getEl('absolute-panel').classList.toggle('hidden', selectedScheme !== 'absolute');
         getEl('relative-panel').classList.toggle('hidden', selectedScheme !== 'relative');
-        getEl('aplus-cap-section').classList.toggle('hidden', selectedScheme !== 'absolute');
     }
 
     function updateRelativeInfo() {
