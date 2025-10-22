@@ -37,6 +37,18 @@
             cursor: pointer;
             border-radius: 50%;
         }
+        .title-highlight {
+            text-shadow: 2px 2px 8px rgba(156, 39, 176, 0.3);
+        }
+        code {
+            background-color: #eef2ff;
+            color: #4338ca;
+            padding: 0.2em 0.4em;
+            margin: 0;
+            font-size: 0.9em;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
     </style>
 <link rel="stylesheet" href="/index.css">
 </head>
@@ -44,11 +56,10 @@
 
     <div class="max-w-7xl mx-auto space-y-8">
         <!-- Header -->
-        <header class="text-center">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+        <header class="text-center py-4">
+            <h1 class="text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 title-highlight">
                 Student Grading System
             </h1>
-            <p class="mt-2 text-lg text-slate-600">Advanced Client-Side Grading & Analysis</p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -76,8 +87,9 @@
 
                 <!-- Configuration Card -->
                 <div id="config-card" class="bg-white rounded-xl shadow-lg p-6 hidden">
-                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">2. Grading Scheme</h2>
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">2. Grading Configuration</h2>
                     <div class="space-y-4">
+                        <h3 class="font-semibold text-lg">Grading Scheme</h3>
                         <div class="flex justify-start space-x-8">
                            <label class="flex items-center space-x-2 cursor-pointer">
                                <input type="radio" name="grading-scheme" value="absolute" class="form-radio text-indigo-600" checked>
@@ -111,10 +123,10 @@
                          <div id="aplus-cap-section" class="pt-4 border-t">
                              <h3 class="font-semibold text-lg">A+ Grade Cap</h3>
                              <div>
-                                <label for="aplus-cap-slider" class="block text-sm font-medium">Limit A+ to top % of students:</label>
+                                <label for="aplus-cap-slider" class="block text-sm font-medium">Limit A+ to top % of students (Absolute only):</label>
                                 <div class="flex items-center space-x-2">
-                                    <input type="range" id="aplus-cap-slider" min="1" max="5" value="2" class="w-full">
-                                    <span id="aplus-cap-value" class="font-mono text-indigo-600">2%</span>
+                                    <input type="range" id="aplus-cap-slider" min="0" max="10" value="0" class="w-full">
+                                    <span id="aplus-cap-value" class="font-mono text-indigo-600">0%</span>
                                 </div>
                             </div>
                          </div>
@@ -163,7 +175,6 @@
                                     <th scope="col" class="py-3 px-6">Roll</th>
                                     <th scope="col" class="py-3 px-6">Name</th>
                                     <th scope="col" class="py-3 px-6">Marks</th>
-                                    <th scope="col" class="py-3 px-6">Scaled Marks</th>
                                     <th scope="col" class="py-3 px-6">Grade</th>
                                     <th scope="col" class="py-3 px-6">Points</th>
                                     <th scope="col" class="py-3 px-6">Remarks</th>
@@ -181,41 +192,52 @@
         <!-- Documentation Card -->
         <div class="bg-white rounded-xl shadow-lg p-6 lg:p-8">
             <h2 class="text-3xl font-bold mb-4 border-b pb-3">Documentation & Methodology</h2>
-            <div class="space-y-6 text-slate-700">
+            <div class="space-y-8 text-slate-700 leading-relaxed">
                 <div>
-                    <h3 class="text-xl font-semibold mb-2 text-indigo-600">How to Use This Tool</h3>
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-600">How to Use This Tool</h3>
                     <ol class="list-decimal list-inside space-y-2">
-                        <li><strong>Input Data:</strong> Paste your CSV data into the text box or upload a <code>.csv</code> file. The file must have headers like <code>Roll</code>, <code>Name</code>, and <code>Marks</code>. You can also click "Load Example" to see the required format.</li>
-                        <li><strong>Parse Data:</strong> Click the "Parse Input" button. This will read your data and show a statistical summary and a histogram of the marks distribution. The configuration panel will also appear.</li>
-                        <li><strong>Configure Grading:</strong> Choose a grading scheme (Absolute or Relative) and adjust the parameters like cutoff marks, percentiles, or the A+ cap using the sliders and input fields.</li>
-                        <li><strong>Compute Grades:</strong> Click "Compute Grades". The tool will calculate grades for all students and display the results in a table and update the grade distribution charts.</li>
-                        <li><strong>Export Results:</strong> You can download the final graded table as a new CSV file or copy it to your clipboard for pasting elsewhere.</li>
+                        <li><strong>Input Data:</strong> Paste your CSV data or upload a <code>.csv</code> file. The file must have headers like <code>Roll</code>, <code>Name</code>, and <code>Marks</code>.</li>
+                        <li><strong>Parse Data:</strong> Click "Parse Input". This reads the data and shows a statistical summary of the marks.</li>
+                        <li><strong>Configure Grading:</strong> Choose a grading scheme (Absolute or Relative) and adjust the parameters like cutoff marks or percentiles.</li>
+                        <li><strong>Compute Grades:</strong> Click "Compute Grades". The tool will calculate grades for all students and display the results in the table and charts.</li>
+                        <li><strong>Export Results:</strong> Download the final graded table as a CSV file or copy it to your clipboard.</li>
                     </ol>
                 </div>
                  <div>
-                    <h3 class="text-xl font-semibold mb-2 text-indigo-600">Grading Methodologies</h3>
-                    <div class="space-y-4">
+                    <h3 class="text-xl font-semibold mb-3 text-indigo-600">Grading Methodologies</h3>
+                    <div class="space-y-6">
                         <div>
                             <h4 class="font-bold text-lg">1. Absolute Grading</h4>
-                            <p>This is a straightforward method where grades are assigned based on predefined score ranges. If a student's marks are above a certain cutoff, they receive the corresponding grade. The cutoffs can be adjusted using the sliders.</p>
-                            <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Example: If A- cutoff is 70, any student with marks ≥ 70 (and less than the 'A' cutoff) gets an A-.</p>
+                            <p>Grades are assigned based on predefined score ranges that you set using the sliders. This method is straightforward and measures performance against a fixed scale. An optional "A+ Cap" can be applied to limit the number of A+ grades to a certain top percentage of the class, promoting exceptional distinction.</p>
                         </div>
                          <div>
                             <h4 class="font-bold text-lg">2. Relative Grading</h4>
-                            <p>This method grades students based on their performance relative to their peers. This is useful when an exam is unusually easy or difficult. This tool provides three relative grading techniques:</p>
-                            <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
-                                <li>
-                                    <strong>Percentile-based:</strong> Students are ranked from highest to lowest score. Grades are assigned based on this ranking. For this method, <strong>the top 2% of students are automatically assigned 'A+'</strong>. You can then define the percentile cutoffs for the remaining grades.
-                                </li>
-                                <li>
-                                    <strong>Mean & Standard Deviation (SD):</strong> This method uses the class average (mean) and the spread of scores (SD) to determine grades. A student's grade depends on how many standard deviations their score is above or below the mean.
-                                    <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Formula: Grade depends on thresholds for <code>(Student's Marks - Mean) / SD</code>.</p>
-                                </li>
-                                <li>
-                                    <strong>Curve Scaling:</strong> This technique first rescales all marks to fit a standard 0-100 range. The student with the highest score gets 100, and the one with the lowest gets 0. Then, the absolute grading cutoffs are applied to these new "scaled" marks.
-                                     <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Formula: <code>Scaled Mark = ((Original Mark - Min Mark) / (Max Mark - Min Mark)) * 100</code>.</p>
-                                </li>
-                            </ul>
+                            <p>This method grades students based on their performance relative to their peers, making it useful for norm-referenced assessments.</p>
+                            <div class="mt-4 space-y-6 pl-4 border-l-2 border-slate-200">
+                                <div>
+                                    <h5 class="font-semibold">Percentile-based</h5>
+                                    <p>Students are ranked by score. A grade is assigned based on the student's cumulative percentile rank. For example, setting the 'A' cutoff to 15% means the top 15% of students (including A+) will receive an 'A' grade or higher.</p>
+                                    <p class="mt-2 font-medium">Formula:</p>
+                                    <code class="block mt-1">Percentile Rank (P) = (Student's Rank / Total Students) * 100</code>
+                                    <p class="text-sm mt-1">A student receives a grade if their <code>P</code> is less than or equal to the grade's cutoff percentile.</p>
+                                </div>
+                                <div>
+                                    <h5 class="font-semibold">Mean & Standard Deviation (SD)</h5>
+                                    <p>This statistical method grades students based on their score's distance from the class average (mean), measured in standard deviations (SD). It is effective for large classes with a normal distribution of scores.</p>
+                                    <p class="mt-2 font-medium">Formulas:</p>
+                                    <ul class="list-disc list-inside mt-1 space-y-1 text-sm">
+                                        <li>Mean (μ): <code>μ = (Σxᵢ) / N</code> (Sum of scores / Number of students)</li>
+                                        <li>Standard Deviation (σ): <code>σ = √[ Σ(xᵢ - μ)² / (N-1) ]</code> (Sample SD)</li>
+                                        <li>Condition: A grade is assigned if <code>Score ≥ μ + (Multiplier × σ)</code>.</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5 class="font-semibold">Curve Scaling</h5>
+                                    <p>This method normalizes all scores to fit a 0-100 range by mapping the lowest score to 0 and the highest to 100. The standard absolute cutoffs are then applied to these new scaled scores. This is useful for adjusting scores from an exam that was unusually hard or easy.</p>
+                                    <p class="mt-2 font-medium">Formula:</p>
+                                     <code class="block mt-1">Scaled Score = ((Original Score - Min Score) / (Max Score - Min Score)) * 100</code>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -275,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const RELATIVE_INFO_TEXT = {
         percentile: `
             <h4 class="font-bold">Percentile-based</h4>
-            <p class="text-xs text-slate-500 mt-1">Assigns grades based on rank. The top 2% of students automatically receive 'A+'. You can define cutoffs for the remaining grades. This method is useful for norm-referenced testing.</p>
+            <p class="text-xs text-slate-500 mt-1">Assigns grades based on rank. You can define the cumulative top percentile cutoffs for each grade. This method is useful for norm-referenced testing.</p>
         `,
         mean_sd: `
             <h4 class="font-bold">Mean & Standard Deviation</h4>
@@ -393,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
+            dynamicTyping: true,
             complete: (results) => processParsedData(results.data),
             error: (error) => alert(`CSV Parsing Error: ${error.message}`)
         });
@@ -411,26 +434,25 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Could not find a 'Marks' column. Please check your CSV headers.");
             return;
         }
-
+        
         const ignoreErrors = getEl('ignore-errors').checked;
         const processedStudents = [];
         let errorCount = 0;
 
         data.forEach((row, index) => {
             const marks = parseFloat(row[headerMapping.marks]);
+            
             if (isNaN(marks)) {
                 errorCount++;
                 if (!ignoreErrors) {
-                    // Invalidate the entire process if an error is found and not ignored
-                    processedStudents.length = 0; 
-                    throw new Error(`Invalid mark on row ${index + 2}: '${row[headerMapping.marks]}'. Check the box to ignore such rows.`);
+                    processedStudents.length = 0; // Invalidate the entire process
+                    throw new Error(`Invalid numeric value on row ${index + 2}. Check the box to ignore such rows.`);
                 }
             } else {
                  processedStudents.push({
                     roll: row[headerMapping.roll] || `N/A-${index}`,
                     name: row[headerMapping.name] || 'Unknown',
                     marks: marks,
-                    originalMarks: marks,
                     scaledMarks: marks,
                     grade: null,
                     points: null,
@@ -440,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (errorCount > 0 && ignoreErrors) {
-            alert(`${errorCount} row(s) with non-numeric marks were ignored.`);
+            alert(`${errorCount} row(s) with non-numeric data were ignored.`);
         }
         
         if (processedStudents.length > 0) {
@@ -459,13 +481,14 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please parse student data first.');
             return;
         }
-
+        
+        // Reset grades before re-computation
         students.forEach(s => {
-            s.grade = null; s.points = null; s.remarks = null; s.scaledMarks = s.marks;
+            s.scaledMarks = s.marks; // Initialize scaled marks
+            s.grade = null; s.points = null; s.remarks = null;
         });
 
         const scheme = document.querySelector('input[name="grading-scheme"]:checked').value;
-        const relativeMethod = getEl('relative-method').value;
         let gradingSuccessful = true;
         
         try {
@@ -480,8 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (gradingSuccessful) {
-            // Only apply the slider cap if not using percentile relative grading, which has its own fixed cap
-            if (!(scheme === 'relative' && relativeMethod === 'percentile')) {
+            if (scheme === 'absolute') {
                 applyAPlusCap();
             }
             renderTable();
@@ -500,8 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const csvContent = Papa.unparse(students.map(s => ({
             Roll: s.roll,
             Name: s.name,
-            Marks: s.originalMarks,
-            Scaled_Marks: s.scaledMarks.toFixed(2),
+            Marks: s.scaledMarks.toFixed(2),
             Grade: s.grade,
             Grade_Points: s.points,
             Remarks: s.remarks
@@ -524,9 +545,9 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please compute grades first.');
             return;
         }
-        const headers = ["Roll", "Name", "Marks", "Scaled Marks", "Grade", "Points", "Remarks"];
+        const headers = ["Roll", "Name", "Marks", "Grade", "Points", "Remarks"];
         const rows = students.map(s => [
-            s.roll, s.name, s.originalMarks, s.scaledMarks.toFixed(2), s.grade, s.points, s.remarks
+            s.roll, s.name, s.scaledMarks.toFixed(2), s.grade, s.points, s.remarks
         ].join('\t'));
         
         const tsvContent = [headers.join('\t'), ...rows].join('\n');
@@ -566,22 +587,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch(method) {
             case 'percentile':
-                const cutoffs = { 'A+': 0.02 }; // Hardcode A+ to top 2%
+                const cutoffs = {};
                 PASSING_GRADES.forEach(grade => {
-                    if (grade === 'A+') return; // Skip A+ as it's hardcoded
                     const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
                     const value = parseFloat(getEl(`percentile-${cleanGradeId}`).value);
-                    if (isNaN(value)) throw new Error(`Invalid percentile value for grade ${grade}.`);
+                    if (isNaN(value) || value < 0 || value > 100) throw new Error(`Invalid percentile value for grade ${grade}. Must be between 0 and 100.`);
                     cutoffs[grade] = value / 100;
                 });
                 
-                // Validation
-                if (cutoffs['A'] <= cutoffs['A+']) {
-                    throw new Error(`Percentile for 'A' must be greater than the fixed 2% for 'A+'.`);
-                }
-                for (let i = 1; i < PASSING_GRADES.length - 1; i++) { // Start from index 1 ('A') to check against next
+                for (let i = 0; i < PASSING_GRADES.length - 1; i++) {
                     if (cutoffs[PASSING_GRADES[i]] >= cutoffs[PASSING_GRADES[i+1]]) {
-                        throw new Error(`Percentile cutoffs must be in increasing order. Error at ${PASSING_GRADES[i]} and ${PASSING_GRADES[i+1]}.`);
+                         throw new Error(`Percentile cutoffs must be in strictly increasing order. Error at ${PASSING_GRADES[i]} (${cutoffs[PASSING_GRADES[i]]*100}%) and ${PASSING_GRADES[i+1]} (${cutoffs[PASSING_GRADES[i+1]]*100}%).`);
                     }
                 }
 
@@ -601,8 +617,8 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'mean_sd':
                 const stats = calculateStats(students.map(s => s.marks));
                 const { mean, sd } = stats;
-                if (sd === 0) { // Handle case where all marks are the same
-                     students.forEach(student => setStudentGrade(student, 'B')); // Assign a middle grade
+                if (sd === 0) {
+                     students.forEach(student => setStudentGrade(student, 'B'));
                      return;
                 }
                 const sdCutoffs = {};
@@ -611,10 +627,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     sdCutoffs[grade] = parseFloat(getEl(`sd-${cleanGradeId}`).value);
                 });
 
-                // Validation
                 for (let i = 0; i < PASSING_GRADES.length - 1; i++) {
                     if (sdCutoffs[PASSING_GRADES[i]] <= sdCutoffs[PASSING_GRADES[i+1]]) {
-                        throw new Error(`Mean & SD multipliers must be in decreasing order. Error at ${PASSING_GRADES[i]} and ${PASSING_GRADES[i+1]}.`);
+                        throw new Error(`Mean & SD multipliers must be in strictly decreasing order. Error at ${PASSING_GRADES[i]} and ${PASSING_GRADES[i+1]}.`);
                     }
                 }
 
@@ -645,9 +660,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function applyAPlusCap() {
         const capPercent = parseInt(getEl('aplus-cap-slider').value) / 100;
+        if (capPercent === 0) return; // Skip if cap is disabled
+
         const capNumber = Math.max(1, Math.round(students.length * capPercent));
 
-        // Get all students who initially got A+ or A
         const highAchievers = students
             .filter(s => s.grade === 'A+' || s.grade === 'A')
             .sort((a, b) => b.marks - a.marks);
@@ -656,7 +672,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index < capNumber) {
                 setStudentGrade(student, 'A+');
             } else {
-                setStudentGrade(student, 'A');
+                // Only downgrade if their original grade was A+
+                if (student.grade === 'A+') {
+                   setStudentGrade(student, 'A');
+                }
             }
         });
     }
@@ -689,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sorted = [...data].sort((a, b) => a - b);
         const mid = Math.floor(n / 2);
         const median = n % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-        const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n > 1 ? n - 1 : n); // Sample SD
+        const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n > 1 ? n - 1 : n);
         const sd = Math.sqrt(variance);
         return {
             n: n, mean: mean, median: median, sd: sd, min: sorted[0], max: sorted[n - 1]
@@ -714,8 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderStats(stats) {
-        const statsContainer = getEl('stats-summary');
-        statsContainer.innerHTML = `
+        getEl('stats-summary').innerHTML = `
             <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Students</div><div class="text-xl font-bold">${stats.n}</div></div>
             <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Mean</div><div class="text-xl font-bold">${stats.mean.toFixed(2)}</div></div>
             <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Median</div><div class="text-xl font-bold">${stats.median.toFixed(2)}</div></div>
@@ -731,10 +749,12 @@ document.addEventListener('DOMContentLoaded', () => {
         students.forEach(s => {
             const row = `
                 <tr class="bg-white border-b hover:bg-slate-50">
-                    <td class="py-4 px-6 font-medium text-slate-900">${s.roll}</td><td class="py-4 px-6">${s.name}</td>
-                    <td class="py-4 px-6">${s.originalMarks}</td><td class="py-4 px-6">${s.scaledMarks.toFixed(2)}</td>
+                    <td class="py-4 px-6 font-medium text-slate-900">${s.roll}</td>
+                    <td class="py-4 px-6">${s.name}</td>
+                    <td class="py-4 px-6 font-semibold">${s.scaledMarks.toFixed(2)}</td>
                     <td class="py-4 px-6 font-bold" style="color: ${GRADE_MAP[s.grade]?.color || '#000'}">${s.grade}</td>
-                    <td class="py-4 px-6">${s.points}</td><td class="py-4 px-6">${s.remarks}</td>
+                    <td class="py-4 px-6">${s.points}</td>
+                    <td class="py-4 px-6">${s.remarks}</td>
                 </tr>`;
             tbody.innerHTML += row;
         });
@@ -796,23 +816,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function toggleSchemePanels(event) {
         const selectedScheme = event.target.value;
-        ['absolute', 'relative'].forEach(scheme => {
-            getEl(`${scheme}-panel`).classList.toggle('hidden', scheme !== selectedScheme);
-        });
+        getEl('absolute-panel').classList.toggle('hidden', selectedScheme !== 'absolute');
+        getEl('relative-panel').classList.toggle('hidden', selectedScheme !== 'relative');
+        getEl('aplus-cap-section').classList.toggle('hidden', selectedScheme !== 'absolute');
     }
 
     function updateRelativeInfo() {
         const method = getEl('relative-method').value;
         getEl('relative-info').innerHTML = RELATIVE_INFO_TEXT[method];
-        // Hide A+ cap slider for percentile method, show for others
-        getEl('aplus-cap-section').classList.toggle('hidden', method === 'percentile');
     }
 
     function updateRelativeConfigPanel() {
         const method = getEl('relative-method').value;
         const container = getEl('relative-config-panel');
         let configHTML = '';
-        const defaultPercentiles = { 'A': 15, 'A-': 30, 'B': 50, 'B-': 70, 'C': 90, 'C-': 100 };
+        const defaultPercentiles = { 'A+': 0, 'A': 15, 'A-': 30, 'B': 50, 'B-': 70, 'C': 90, 'C-': 100 };
         const defaultSDs = { 'A+': 2, 'A': 1.5, 'A-': 1, 'B': 0, 'B-': -0.5, 'C': -1, 'C-': -1.5 };
 
         switch(method) {
@@ -820,24 +838,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 configHTML = `<h4 class="font-semibold text-md">Percentile Cutoffs</h4><p class="text-sm text-slate-600">Set the cumulative top percentile for each grade.</p>`;
                 PASSING_GRADES.forEach(grade => {
                     const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
-                    if (grade === 'A+') {
-                        configHTML += `
+                    configHTML += `
                         <div class="grid grid-cols-5 items-center gap-2">
                             <label class="font-medium">${grade}</label>
-                            <span class="text-sm col-span-4 text-left font-semibold text-indigo-600 pl-2">Top 2% (Fixed)</span>
-                        </div>`;
-                    } else {
-                        configHTML += `
-                            <div class="grid grid-cols-5 items-center gap-2">
-                                <label class="font-medium">${grade}</label>
-                                <span class="text-sm col-span-2 text-right pr-2">Top</span>
-                                <input type="number" id="percentile-${cleanGradeId}" value="${defaultPercentiles[grade]}" min="3" max="100" class="w-full p-1 border rounded-lg text-center">
-                                <span class="text-sm">%</span>
-                            </div>
-                        `;
-                    }
+                            <span class="text-sm col-span-2 text-right pr-2">Top</span>
+                            <input type="number" id="percentile-${cleanGradeId}" value="${defaultPercentiles[grade]}" min="0" max="100" step="any" class="w-full p-1 border rounded-lg text-center">
+                            <span class="text-sm">%</span>
+                        </div>
+                    `;
                 });
-                configHTML += `<p class="text-xs text-slate-500 pt-1">Example: Top 2% get 'A+'. If 'A' is at 15%, then students from the 3rd to 15th percentile get 'A'. Remainder get 'F'.</p>`;
+                configHTML += `<p class="text-xs text-slate-500 pt-1">Example: If 'A' is at 15%, students from the (A+ percentile)th to 15th percentile get 'A'. Remainder get 'F'.</p>`;
                 break;
             case 'mean_sd':
                 configHTML = `<h4 class="font-semibold text-md">Mean & SD Cutoffs</h4><p class="text-sm text-slate-600">Set grade cutoffs based on Standard Deviations (SD) from the Mean.</p>`;
@@ -859,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
         }
         container.innerHTML = configHTML;
-        updateRelativeInfo(); // Also update cap visibility
+        updateRelativeInfo();
     }
     
     // --- APP START ---
