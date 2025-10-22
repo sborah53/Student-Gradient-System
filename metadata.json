@@ -1,5 +1,5 @@
 {
   "name": "Student Grading System",
-  "description": "An easy-to-use application for calculating student grades using absolute or relative grading methods. Paste student data or upload a CSV file to get started.",
+  "description": "A client-side web application for student grading using customizable absolute, relative, and hybrid schemes. It supports CSV import, provides statistical analysis, data visualization, and export options.",
   "requestFramePermissions": []
 }

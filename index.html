@@ -1,23 +1,871 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Grading System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
-  }
-}
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f0f2f5;
+        }
+        .info-panel {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .info-panel.show {
+            display: block;
+            max-height: 500px; /* Adjust as needed */
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-50 flex flex-col min-h-screen">
-    <div id="root" class="flex flex-col flex-grow"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body class="bg-slate-100 text-slate-800 font-sans p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+                Student Grading System
+            </h1>
+            <p class="mt-2 text-lg text-slate-600">Advanced Client-Side Grading & Analysis</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Input & Configuration -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Input Card -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">1. Input Data</h2>
+                    <div class="space-y-4">
+                        <textarea id="csv-input" class="w-full h-40 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Paste CSV data here (e.g., Roll,Name,Marks)"></textarea>
+                        <div class="flex items-center justify-between">
+                            <label for="file-upload" class="cursor-pointer bg-slate-200 text-slate-800 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 transition">
+                                Or Upload CSV
+                            </label>
+                            <input id="file-upload" type="file" class="hidden" accept=".csv">
+                            <button id="load-example" class="bg-teal-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-teal-600 transition">Load Example</button>
+                        </div>
+                        <div class="flex items-center space-x-2 pt-2">
+                             <input type="checkbox" id="ignore-errors" class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500">
+                             <label for="ignore-errors" class="text-sm text-slate-600">Ignore rows with non-numeric marks</label>
+                        </div>
+                        <button id="parse-data" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition transform hover:scale-105">Parse Input</button>
+                    </div>
+                </div>
+
+                <!-- Configuration Card -->
+                <div id="config-card" class="bg-white rounded-xl shadow-lg p-6 hidden">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">2. Grading Scheme</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-start space-x-8">
+                           <label class="flex items-center space-x-2 cursor-pointer">
+                               <input type="radio" name="grading-scheme" value="absolute" class="form-radio text-indigo-600" checked>
+                               <span>Absolute</span>
+                           </label>
+                           <label class="flex items-center space-x-2 cursor-pointer">
+                               <input type="radio" name="grading-scheme" value="relative" class="form-radio text-indigo-600">
+                               <span>Relative</span>
+                           </label>
+                        </div>
+                        
+                        <!-- Absolute Grading Panel -->
+                        <div id="absolute-panel" class="space-y-3 pt-4 border-t">
+                             <h3 class="font-semibold text-lg">Absolute Cutoffs</h3>
+                             <div id="grade-sliders" class="space-y-2"></div>
+                        </div>
+
+                        <!-- Relative Grading Panel -->
+                        <div id="relative-panel" class="hidden space-y-3 pt-4 border-t">
+                            <h3 class="font-semibold text-lg">Relative Method</h3>
+                            <select id="relative-method" class="w-full p-2 border rounded-lg focus:ring-indigo-500 focus:outline-none">
+                                <option value="percentile">Percentile-based</option>
+                                <option value="mean_sd">Mean & SD-based</option>
+                                <option value="curve_scale">Curve-scaling</option>
+                            </select>
+                            <div id="relative-info"></div>
+                            <div id="relative-config-panel" class="mt-4 space-y-3"></div>
+                        </div>
+
+                         <!-- A+ Cap -->
+                         <div id="aplus-cap-section" class="pt-4 border-t">
+                             <h3 class="font-semibold text-lg">A+ Grade Cap</h3>
+                             <div>
+                                <label for="aplus-cap-slider" class="block text-sm font-medium">Limit A+ to top % of students:</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="range" id="aplus-cap-slider" min="1" max="5" value="2" class="w-full">
+                                    <span id="aplus-cap-value" class="font-mono text-indigo-600">2%</span>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                    <button id="compute-grades" class="mt-6 w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition transform hover:scale-105">Compute Grades</button>
+                </div>
+            </div>
+
+            <!-- Right Column: Output & Analysis -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Stats & Charts Card -->
+                <div id="analysis-card" class="bg-white rounded-xl shadow-lg p-6 hidden">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-2">3. Analysis & Visualization</h2>
+                    <div id="stats-summary" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 text-center mb-6"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                           <h3 class="font-semibold text-center mb-2">Marks Distribution</h3>
+                           <canvas id="marks-histogram"></canvas>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-center mb-2">Grade Distribution (Histogram)</h3>
+                            <canvas id="grade-histogram"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                         <h3 class="font-semibold text-center mb-2">Grade Distribution (Pie)</h3>
+                         <div class="max-w-xs mx-auto">
+                            <canvas id="grade-pie-chart"></canvas>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Results Table Card -->
+                <div id="results-card" class="bg-white rounded-xl shadow-lg p-6 hidden">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-2xl font-bold">4. Graded Results</h2>
+                        <div class="space-x-2">
+                            <button id="copy-table" class="bg-slate-200 text-slate-800 font-semibold py-2 px-3 rounded-lg hover:bg-slate-300 transition text-sm">Copy</button>
+                            <button id="download-csv" class="bg-green-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-green-600 transition text-sm">Download CSV</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] border rounded-lg">
+                        <table class="w-full text-sm text-left text-slate-500">
+                            <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
+                                <tr>
+                                    <th scope="col" class="py-3 px-6">Roll</th>
+                                    <th scope="col" class="py-3 px-6">Name</th>
+                                    <th scope="col" class="py-3 px-6">Marks</th>
+                                    <th scope="col" class="py-3 px-6">Scaled Marks</th>
+                                    <th scope="col" class="py-3 px-6">Grade</th>
+                                    <th scope="col" class="py-3 px-6">Points</th>
+                                    <th scope="col" class="py-3 px-6">Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-tbody">
+                                <!-- Rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Documentation Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6 lg:p-8">
+            <h2 class="text-3xl font-bold mb-4 border-b pb-3">Documentation & Methodology</h2>
+            <div class="space-y-6 text-slate-700">
+                <div>
+                    <h3 class="text-xl font-semibold mb-2 text-indigo-600">How to Use This Tool</h3>
+                    <ol class="list-decimal list-inside space-y-2">
+                        <li><strong>Input Data:</strong> Paste your CSV data into the text box or upload a <code>.csv</code> file. The file must have headers like <code>Roll</code>, <code>Name</code>, and <code>Marks</code>. You can also click "Load Example" to see the required format.</li>
+                        <li><strong>Parse Data:</strong> Click the "Parse Input" button. This will read your data and show a statistical summary and a histogram of the marks distribution. The configuration panel will also appear.</li>
+                        <li><strong>Configure Grading:</strong> Choose a grading scheme (Absolute or Relative) and adjust the parameters like cutoff marks, percentiles, or the A+ cap using the sliders and input fields.</li>
+                        <li><strong>Compute Grades:</strong> Click "Compute Grades". The tool will calculate grades for all students and display the results in a table and update the grade distribution charts.</li>
+                        <li><strong>Export Results:</strong> You can download the final graded table as a new CSV file or copy it to your clipboard for pasting elsewhere.</li>
+                    </ol>
+                </div>
+                 <div>
+                    <h3 class="text-xl font-semibold mb-2 text-indigo-600">Grading Methodologies</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-bold text-lg">1. Absolute Grading</h4>
+                            <p>This is a straightforward method where grades are assigned based on predefined score ranges. If a student's marks are above a certain cutoff, they receive the corresponding grade. The cutoffs can be adjusted using the sliders.</p>
+                            <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Example: If A- cutoff is 70, any student with marks ≥ 70 (and less than the 'A' cutoff) gets an A-.</p>
+                        </div>
+                         <div>
+                            <h4 class="font-bold text-lg">2. Relative Grading</h4>
+                            <p>This method grades students based on their performance relative to their peers. This is useful when an exam is unusually easy or difficult. This tool provides three relative grading techniques:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                                <li>
+                                    <strong>Percentile-based:</strong> Students are ranked from highest to lowest score. Grades are assigned based on this ranking. For this method, <strong>the top 2% of students are automatically assigned 'A+'</strong>. You can then define the percentile cutoffs for the remaining grades.
+                                </li>
+                                <li>
+                                    <strong>Mean & Standard Deviation (SD):</strong> This method uses the class average (mean) and the spread of scores (SD) to determine grades. A student's grade depends on how many standard deviations their score is above or below the mean.
+                                    <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Formula: Grade depends on thresholds for <code>(Student's Marks - Mean) / SD</code>.</p>
+                                </li>
+                                <li>
+                                    <strong>Curve Scaling:</strong> This technique first rescales all marks to fit a standard 0-100 range. The student with the highest score gets 100, and the one with the lowest gets 0. Then, the absolute grading cutoffs are applied to these new "scaled" marks.
+                                     <p class="mt-1 text-sm font-mono bg-slate-100 p-2 rounded">Formula: <code>Scaled Mark = ((Original Mark - Min Mark) / (Max Mark - Min Mark)) * 100</code>.</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="text-center mt-12 py-4">
+        <p class="text-slate-600">Developed by <strong>Sangkha Borah, Department of Physics, IIT Hyderabad</strong>.</p>
+        <p class="text-sm text-slate-500 mt-1">This tool was created with assistance from Gemini and other AI tools.</p>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- STATE MANAGEMENT ---
+    let students = [];
+    let chartInstances = {};
+
+    // --- CONSTANTS ---
+    const GRADE_MAP = {
+        'A+': { points: 10, remarks: 'Outstanding', color: '#10B981' },
+        'A':  { points: 10, remarks: 'Excellent', color: '#34D399' },
+        'A-': { points: 9,  remarks: 'Very Good', color: '#6EE7B7' },
+        'B':  { points: 8,  remarks: 'Good', color: '#FBBF24' },
+        'B-': { points: 7,  remarks: 'Satisfactory', color: '#FCD34D' },
+        'C':  { points: 6,  remarks: 'Marginal', color: '#F97316' },
+        'C-': { points: 5,  remarks: 'Unsuccessful', color: '#FB923C' },
+        'F':  { points: 0,  remarks: 'Fail', color: '#EF4444' }
+    };
+    const GRADES = Object.keys(GRADE_MAP);
+    const PASSING_GRADES = GRADES.filter(g => g !== 'F');
+
+    const EXAMPLE_CSV = `Roll,Name,Marks
+101,Alia,95
+102,Bob,72
+103,Sunita,84
+104,Tom,58
+105,Meena,77
+106,John,91
+107,Arjun,66
+108,Nina,48
+109,Paul,82
+110,Kiran,69
+111,Deepa,99
+112,Ravi,34
+113,Priya,75
+114,Anil,88
+115,Sonia,63
+116,Vikram,25
+117,Geeta,81
+118,Mohan,55
+119,Rita,79
+120,Amit,92`;
+
+    const RELATIVE_INFO_TEXT = {
+        percentile: `
+            <h4 class="font-bold">Percentile-based</h4>
+            <p class="text-xs text-slate-500 mt-1">Assigns grades based on rank. The top 2% of students automatically receive 'A+'. You can define cutoffs for the remaining grades. This method is useful for norm-referenced testing.</p>
+        `,
+        mean_sd: `
+            <h4 class="font-bold">Mean & Standard Deviation</h4>
+            <p class="text-xs text-slate-500 mt-1">Calculates the class average (mean) and spread of scores (standard deviation). Grades are assigned based on how many standard deviations a student's score is from the mean (Z-score). Ideal for large classes with a normal distribution of scores.</p>
+        `,
+        curve_scale: `
+            <h4 class="font-bold">Curve Scaling</h4>
+            <p class="text-xs text-slate-500 mt-1">Rescales all marks to fit a 0-100 range, with the lowest score becoming 0 and the highest 100. Then, absolute cutoffs are applied to these new scaled scores. This adjusts for exams that were unusually hard or easy.</p>
+        `
+    };
+
+    // --- DOM ELEMENTS ---
+    const getEl = (id) => document.getElementById(id);
+    const csvInput = getEl('csv-input');
+    const fileUpload = getEl('file-upload');
+    const loadExampleBtn = getEl('load-example');
+    const parseDataBtn = getEl('parse-data');
+    const computeGradesBtn = getEl('compute-grades');
+    const downloadCsvBtn = getEl('download-csv');
+    const copyTableBtn = getEl('copy-table');
+    
+    // --- UI INITIALIZATION ---
+    function initializeUI() {
+        setupGradeSliders();
+        setupEventListeners();
+        updateRelativeInfo();
+        updateRelativeConfigPanel();
+    }
+    
+    function setupGradeSliders() {
+        const slidersContainer = getEl('grade-sliders');
+        let prevSliderValue = 101;
+        const initialCutoffs = { 'A+': 95, 'A': 80, 'A-': 70, 'B': 60, 'B-': 50, 'C': 40, 'C-': 30, 'F': 30 };
+        slidersContainer.innerHTML = ''; // Clear existing
+        PASSING_GRADES.forEach(grade => {
+            const cutoff = initialCutoffs[grade];
+            const max = prevSliderValue - 1;
+            const sliderHTML = `
+                <div class="grid grid-cols-4 items-center gap-2">
+                    <label class="font-medium col-span-1">${grade}</label>
+                    <input type="range" id="slider-${grade}" data-grade="${grade}" min="${initialCutoffs['F']}" max="${max}" value="${cutoff}" class="w-full col-span-2">
+                    <span id="value-${grade}" class="font-mono text-indigo-600 text-right col-span-1">≥ ${cutoff}</span>
+                </div>`;
+            slidersContainer.innerHTML += sliderHTML;
+            prevSliderValue = cutoff;
+        });
+
+        PASSING_GRADES.forEach(grade => {
+            const slider = getEl(`slider-${grade}`);
+            slider.addEventListener('input', (e) => {
+                const currentValue = parseInt(e.target.value);
+                getEl(`value-${grade}`).textContent = `≥ ${currentValue}`;
+
+                // Adjust max of lower grade sliders
+                const gradeIndex = PASSING_GRADES.indexOf(grade);
+                if (gradeIndex < PASSING_GRADES.length - 1) {
+                    const lowerGrade = PASSING_GRADES[gradeIndex + 1];
+                    const lowerSlider = getEl(`slider-${lowerGrade}`);
+                    lowerSlider.max = currentValue - 1;
+                    if (parseInt(lowerSlider.value) >= currentValue) {
+                        lowerSlider.value = currentValue - 1;
+                        getEl(`value-${lowerGrade}`).textContent = `≥ ${lowerSlider.value}`;
+                    }
+                }
+            });
+        });
+    }
+
+    function setupEventListeners() {
+        loadExampleBtn.addEventListener('click', () => {
+             console.log('Load Example button clicked');
+             csvInput.value = EXAMPLE_CSV;
+        });
+        
+        parseDataBtn.addEventListener('click', handleParseData);
+        fileUpload.addEventListener('change', handleFileUpload);
+        computeGradesBtn.addEventListener('click', handleComputeGrades);
+        downloadCsvBtn.addEventListener('click', handleDownloadCSV);
+        copyTableBtn.addEventListener('click', handleCopyTable);
+
+        document.querySelectorAll('input[name="grading-scheme"]').forEach(radio => {
+            radio.addEventListener('change', toggleSchemePanels);
+        });
+
+        getEl('relative-method').addEventListener('change', () => {
+            updateRelativeInfo();
+            updateRelativeConfigPanel();
+        });
+
+        getEl('aplus-cap-slider').addEventListener('input', (e) => {
+            getEl('aplus-cap-value').textContent = `${e.target.value}%`;
+        });
+    }
+    
+    // --- EVENT HANDLERS ---
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => processParsedData(results.data),
+                error: (error) => alert(`CSV Parsing Error: ${error.message}`)
+            });
+        }
+    }
+
+    function handleParseData() {
+        console.log('Parse Input button clicked');
+        const csvText = csvInput.value.trim();
+        if (!csvText) {
+            alert('Please paste CSV data or upload a file.');
+            return;
+        }
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => processParsedData(results.data),
+            error: (error) => alert(`CSV Parsing Error: ${error.message}`)
+        });
+    }
+    
+    function processParsedData(data) {
+        if (data.length === 0) {
+            alert("No data found in CSV.");
+            return;
+        }
+
+        const headers = Object.keys(data[0]);
+        const headerMapping = findCsvHeaders(headers);
+
+        if (!headerMapping.marks) {
+            alert("Could not find a 'Marks' column. Please check your CSV headers.");
+            return;
+        }
+
+        const ignoreErrors = getEl('ignore-errors').checked;
+        const processedStudents = [];
+        let errorCount = 0;
+
+        data.forEach((row, index) => {
+            const marks = parseFloat(row[headerMapping.marks]);
+            if (isNaN(marks)) {
+                errorCount++;
+                if (!ignoreErrors) {
+                    // Invalidate the entire process if an error is found and not ignored
+                    processedStudents.length = 0; 
+                    throw new Error(`Invalid mark on row ${index + 2}: '${row[headerMapping.marks]}'. Check the box to ignore such rows.`);
+                }
+            } else {
+                 processedStudents.push({
+                    roll: row[headerMapping.roll] || `N/A-${index}`,
+                    name: row[headerMapping.name] || 'Unknown',
+                    marks: marks,
+                    originalMarks: marks,
+                    scaledMarks: marks,
+                    grade: null,
+                    points: null,
+                    remarks: null
+                });
+            }
+        });
+        
+        if (errorCount > 0 && ignoreErrors) {
+            alert(`${errorCount} row(s) with non-numeric marks were ignored.`);
+        }
+        
+        if (processedStudents.length > 0) {
+             students = processedStudents;
+             displayAnalysis();
+             getEl('config-card').classList.remove('hidden');
+             getEl('results-card').classList.add('hidden'); // Hide old results on new parse
+        } else if (errorCount === 0) {
+             alert("Parsing failed or no valid data rows found.");
+        }
+    }
+
+    function handleComputeGrades() {
+        console.log('Compute Grades button clicked');
+        if (students.length === 0) {
+            alert('Please parse student data first.');
+            return;
+        }
+
+        students.forEach(s => {
+            s.grade = null; s.points = null; s.remarks = null; s.scaledMarks = s.marks;
+        });
+
+        const scheme = document.querySelector('input[name="grading-scheme"]:checked').value;
+        const relativeMethod = getEl('relative-method').value;
+        let gradingSuccessful = true;
+        
+        try {
+            if (scheme === 'absolute') {
+                gradeAbsolute();
+            } else if (scheme === 'relative') {
+                gradeRelative();
+            }
+        } catch (error) {
+            gradingSuccessful = false;
+            alert(`Grading Error: ${error.message}`);
+        }
+
+        if (gradingSuccessful) {
+            // Only apply the slider cap if not using percentile relative grading, which has its own fixed cap
+            if (!(scheme === 'relative' && relativeMethod === 'percentile')) {
+                applyAPlusCap();
+            }
+            renderTable();
+            updateGradePieChart();
+            updateGradeHistogram();
+            getEl('results-card').classList.remove('hidden');
+        }
+    }
+
+    function handleDownloadCSV() {
+        console.log('Download CSV button clicked');
+        if (students.length === 0 || !students[0].grade) {
+            alert('Please compute grades first.');
+            return;
+        }
+        const csvContent = Papa.unparse(students.map(s => ({
+            Roll: s.roll,
+            Name: s.name,
+            Marks: s.originalMarks,
+            Scaled_Marks: s.scaledMarks.toFixed(2),
+            Grade: s.grade,
+            Grade_Points: s.points,
+            Remarks: s.remarks
+        })));
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "graded_students.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function handleCopyTable() {
+        console.log('Copy Table button clicked');
+        if (students.length === 0 || !students[0].grade) {
+            alert('Please compute grades first.');
+            return;
+        }
+        const headers = ["Roll", "Name", "Marks", "Scaled Marks", "Grade", "Points", "Remarks"];
+        const rows = students.map(s => [
+            s.roll, s.name, s.originalMarks, s.scaledMarks.toFixed(2), s.grade, s.points, s.remarks
+        ].join('\t'));
+        
+        const tsvContent = [headers.join('\t'), ...rows].join('\n');
+        
+        navigator.clipboard.writeText(tsvContent).then(() => {
+            alert('Table copied to clipboard!');
+        }, (err) => {
+            alert('Failed to copy table.');
+            console.error('Copy failed', err);
+        });
+    }
+
+    // --- GRADING LOGIC ---
+    function gradeAbsolute(useScaledMarks = false) {
+        const cutoffs = {};
+        PASSING_GRADES.forEach(grade => {
+            cutoffs[grade] = parseInt(getEl(`slider-${grade}`).value);
+        });
+        
+        students.forEach(student => {
+            const markToGrade = useScaledMarks ? student.scaledMarks : student.marks;
+            let assignedGrade = 'F';
+            for (const grade of PASSING_GRADES) {
+                if (markToGrade >= cutoffs[grade]) {
+                    assignedGrade = grade;
+                    break; 
+                }
+            }
+            setStudentGrade(student, assignedGrade);
+        });
+    }
+
+    function gradeRelative() {
+        const method = getEl('relative-method').value;
+        const sortedStudents = [...students].sort((a, b) => b.marks - a.marks);
+        const n = students.length;
+
+        switch(method) {
+            case 'percentile':
+                const cutoffs = { 'A+': 0.02 }; // Hardcode A+ to top 2%
+                PASSING_GRADES.forEach(grade => {
+                    if (grade === 'A+') return; // Skip A+ as it's hardcoded
+                    const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
+                    const value = parseFloat(getEl(`percentile-${cleanGradeId}`).value);
+                    if (isNaN(value)) throw new Error(`Invalid percentile value for grade ${grade}.`);
+                    cutoffs[grade] = value / 100;
+                });
+                
+                // Validation
+                if (cutoffs['A'] <= cutoffs['A+']) {
+                    throw new Error(`Percentile for 'A' must be greater than the fixed 2% for 'A+'.`);
+                }
+                for (let i = 1; i < PASSING_GRADES.length - 1; i++) { // Start from index 1 ('A') to check against next
+                    if (cutoffs[PASSING_GRADES[i]] >= cutoffs[PASSING_GRADES[i+1]]) {
+                        throw new Error(`Percentile cutoffs must be in increasing order. Error at ${PASSING_GRADES[i]} and ${PASSING_GRADES[i+1]}.`);
+                    }
+                }
+
+                sortedStudents.forEach((student, i) => {
+                    const percentile = (i + 1) / n;
+                    let assignedGrade = 'F';
+                    for (const grade of PASSING_GRADES) {
+                        if (percentile <= cutoffs[grade]) {
+                            assignedGrade = grade;
+                            break;
+                        }
+                    }
+                    setStudentGrade(student, assignedGrade);
+                });
+                break;
+
+            case 'mean_sd':
+                const stats = calculateStats(students.map(s => s.marks));
+                const { mean, sd } = stats;
+                if (sd === 0) { // Handle case where all marks are the same
+                     students.forEach(student => setStudentGrade(student, 'B')); // Assign a middle grade
+                     return;
+                }
+                const sdCutoffs = {};
+                PASSING_GRADES.forEach(grade => {
+                    const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
+                    sdCutoffs[grade] = parseFloat(getEl(`sd-${cleanGradeId}`).value);
+                });
+
+                // Validation
+                for (let i = 0; i < PASSING_GRADES.length - 1; i++) {
+                    if (sdCutoffs[PASSING_GRADES[i]] <= sdCutoffs[PASSING_GRADES[i+1]]) {
+                        throw new Error(`Mean & SD multipliers must be in decreasing order. Error at ${PASSING_GRADES[i]} and ${PASSING_GRADES[i+1]}.`);
+                    }
+                }
+
+                students.forEach(student => {
+                    let assignedGrade = 'F';
+                    for(const grade of PASSING_GRADES) {
+                        if (student.marks >= mean + sdCutoffs[grade] * sd) {
+                            assignedGrade = grade;
+                            break;
+                        }
+                    }
+                    setStudentGrade(student, assignedGrade);
+                });
+                break;
+
+            case 'curve_scale':
+                const marks = students.map(s => s.marks);
+                const minMark = Math.min(...marks);
+                const maxMark = Math.max(...marks);
+                const range = maxMark - minMark;
+                if (range > 0) {
+                     students.forEach(s => s.scaledMarks = ((s.marks - minMark) / range) * 100);
+                }
+                gradeAbsolute(true);
+                break;
+        }
+    }
+    
+    function applyAPlusCap() {
+        const capPercent = parseInt(getEl('aplus-cap-slider').value) / 100;
+        const capNumber = Math.max(1, Math.round(students.length * capPercent));
+
+        // Get all students who initially got A+ or A
+        const highAchievers = students
+            .filter(s => s.grade === 'A+' || s.grade === 'A')
+            .sort((a, b) => b.marks - a.marks);
+        
+        highAchievers.forEach((student, index) => {
+            if (index < capNumber) {
+                setStudentGrade(student, 'A+');
+            } else {
+                setStudentGrade(student, 'A');
+            }
+        });
+    }
+
+    // --- UTILITY & HELPER FUNCTIONS ---
+    function findCsvHeaders(headers) {
+        const mapping = {};
+        const lowerHeaders = headers.map(h => h.toLowerCase().trim());
+
+        const findHeader = (patterns) => {
+            for (const pattern of patterns) {
+                const index = lowerHeaders.findIndex(h => h.includes(pattern));
+                if (index !== -1) return headers[index];
+            }
+            return null;
+        };
+
+        mapping.roll = findHeader(['roll', 'id', 'reg']);
+        mapping.name = findHeader(['name', 'student']);
+        mapping.marks = findHeader(['mark', 'score', 'value']);
+
+        return mapping;
+    }
+
+    function calculateStats(data) {
+        const n = data.length;
+        if (n === 0) return { n: 0, mean: 0, median: 0, sd: 0, min: 0, max: 0 };
+        const sum = data.reduce((a, b) => a + b, 0);
+        const mean = sum / n;
+        const sorted = [...data].sort((a, b) => a - b);
+        const mid = Math.floor(n / 2);
+        const median = n % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n > 1 ? n - 1 : n); // Sample SD
+        const sd = Math.sqrt(variance);
+        return {
+            n: n, mean: mean, median: median, sd: sd, min: sorted[0], max: sorted[n - 1]
+        };
+    }
+    
+    function setStudentGrade(student, grade) {
+        const gradeInfo = GRADE_MAP[grade] || GRADE_MAP['F'];
+        student.grade = grade;
+        student.points = gradeInfo.points;
+        student.remarks = gradeInfo.remarks;
+    }
+
+    // --- RENDERING FUNCTIONS ---
+    function displayAnalysis() {
+        const stats = calculateStats(students.map(s => s.marks));
+        renderStats(stats);
+        updateMarksHistogram();
+        if (chartInstances.pie) chartInstances.pie.destroy();
+        if (chartInstances.gradeHistogram) chartInstances.gradeHistogram.destroy();
+        getEl('analysis-card').classList.remove('hidden');
+    }
+
+    function renderStats(stats) {
+        const statsContainer = getEl('stats-summary');
+        statsContainer.innerHTML = `
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Students</div><div class="text-xl font-bold">${stats.n}</div></div>
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Mean</div><div class="text-xl font-bold">${stats.mean.toFixed(2)}</div></div>
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Median</div><div class="text-xl font-bold">${stats.median.toFixed(2)}</div></div>
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Std Dev</div><div class="text-xl font-bold">${stats.sd.toFixed(2)}</div></div>
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Min</div><div class="text-xl font-bold">${stats.min.toFixed(2)}</div></div>
+            <div class="bg-slate-100 p-2 rounded-lg"><div class="text-xs text-slate-500">Max</div><div class="text-xl font-bold">${stats.max.toFixed(2)}</div></div>
+        `;
+    }
+
+    function renderTable() {
+        const tbody = getEl('results-tbody');
+        tbody.innerHTML = '';
+        students.forEach(s => {
+            const row = `
+                <tr class="bg-white border-b hover:bg-slate-50">
+                    <td class="py-4 px-6 font-medium text-slate-900">${s.roll}</td><td class="py-4 px-6">${s.name}</td>
+                    <td class="py-4 px-6">${s.originalMarks}</td><td class="py-4 px-6">${s.scaledMarks.toFixed(2)}</td>
+                    <td class="py-4 px-6 font-bold" style="color: ${GRADE_MAP[s.grade]?.color || '#000'}">${s.grade}</td>
+                    <td class="py-4 px-6">${s.points}</td><td class="py-4 px-6">${s.remarks}</td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function updateMarksHistogram() {
+        if (chartInstances.histogram) chartInstances.histogram.destroy();
+        const marks = students.map(s => s.marks);
+        const maxMark = Math.max(100, ...marks);
+        const binSize = 10;
+        const numBins = Math.ceil(maxMark / binSize);
+        const bins = new Array(numBins).fill(0);
+        const labels = Array.from({length: numBins}, (_, i) => `${i*binSize}-${(i+1)*binSize}`);
+        
+        marks.forEach(mark => {
+            const binIndex = Math.min(Math.floor(mark / binSize), numBins - 1);
+            if(binIndex >= 0) bins[binIndex]++;
+        });
+
+        const ctx = getEl('marks-histogram').getContext('2d');
+        chartInstances.histogram = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'Number of Students', data: bins, backgroundColor: 'rgba(79, 70, 229, 0.8)' }] },
+            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, responsive: true }
+        });
+    }
+
+    function updateGradeHistogram() {
+        if (chartInstances.gradeHistogram) chartInstances.gradeHistogram.destroy();
+        const gradeCounts = GRADES.reduce((acc, grade) => ({...acc, [grade]: 0 }), {});
+        students.forEach(s => { if(s.grade) gradeCounts[s.grade]++; });
+
+        const labels = GRADES.filter(grade => gradeCounts[grade] > 0);
+        const data = labels.map(grade => gradeCounts[grade]);
+        const colors = labels.map(grade => GRADE_MAP[grade].color);
+
+        const ctx = getEl('grade-histogram').getContext('2d');
+        chartInstances.gradeHistogram = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'Number of Students', data: data, backgroundColor: colors }] },
+            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
+
+    function updateGradePieChart() {
+        if (chartInstances.pie) chartInstances.pie.destroy();
+        const gradeCounts = students.reduce((acc, s) => { if(s.grade) acc[s.grade] = (acc[s.grade] || 0) + 1; return acc; }, {});
+        const labels = Object.keys(gradeCounts);
+        const data = Object.values(gradeCounts);
+        const colors = labels.map(grade => GRADE_MAP[grade].color);
+
+        const ctx = getEl('grade-pie-chart').getContext('2d');
+        chartInstances.pie = new Chart(ctx, {
+            type: 'pie',
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, hoverOffset: 4 }] },
+            options: { responsive: true }
+        });
+    }
+    
+    function toggleSchemePanels(event) {
+        const selectedScheme = event.target.value;
+        ['absolute', 'relative'].forEach(scheme => {
+            getEl(`${scheme}-panel`).classList.toggle('hidden', scheme !== selectedScheme);
+        });
+    }
+
+    function updateRelativeInfo() {
+        const method = getEl('relative-method').value;
+        getEl('relative-info').innerHTML = RELATIVE_INFO_TEXT[method];
+        // Hide A+ cap slider for percentile method, show for others
+        getEl('aplus-cap-section').classList.toggle('hidden', method === 'percentile');
+    }
+
+    function updateRelativeConfigPanel() {
+        const method = getEl('relative-method').value;
+        const container = getEl('relative-config-panel');
+        let configHTML = '';
+        const defaultPercentiles = { 'A': 15, 'A-': 30, 'B': 50, 'B-': 70, 'C': 90, 'C-': 100 };
+        const defaultSDs = { 'A+': 2, 'A': 1.5, 'A-': 1, 'B': 0, 'B-': -0.5, 'C': -1, 'C-': -1.5 };
+
+        switch(method) {
+            case 'percentile':
+                configHTML = `<h4 class="font-semibold text-md">Percentile Cutoffs</h4><p class="text-sm text-slate-600">Set the cumulative top percentile for each grade.</p>`;
+                PASSING_GRADES.forEach(grade => {
+                    const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
+                    if (grade === 'A+') {
+                        configHTML += `
+                        <div class="grid grid-cols-5 items-center gap-2">
+                            <label class="font-medium">${grade}</label>
+                            <span class="text-sm col-span-4 text-left font-semibold text-indigo-600 pl-2">Top 2% (Fixed)</span>
+                        </div>`;
+                    } else {
+                        configHTML += `
+                            <div class="grid grid-cols-5 items-center gap-2">
+                                <label class="font-medium">${grade}</label>
+                                <span class="text-sm col-span-2 text-right pr-2">Top</span>
+                                <input type="number" id="percentile-${cleanGradeId}" value="${defaultPercentiles[grade]}" min="3" max="100" class="w-full p-1 border rounded-lg text-center">
+                                <span class="text-sm">%</span>
+                            </div>
+                        `;
+                    }
+                });
+                configHTML += `<p class="text-xs text-slate-500 pt-1">Example: Top 2% get 'A+'. If 'A' is at 15%, then students from the 3rd to 15th percentile get 'A'. Remainder get 'F'.</p>`;
+                break;
+            case 'mean_sd':
+                configHTML = `<h4 class="font-semibold text-md">Mean & SD Cutoffs</h4><p class="text-sm text-slate-600">Set grade cutoffs based on Standard Deviations (SD) from the Mean.</p>`;
+                PASSING_GRADES.forEach(grade => {
+                    const cleanGradeId = grade.replace('-', '_minus').replace('+', '_plus');
+                    configHTML += `
+                        <div class="grid grid-cols-5 items-center gap-2">
+                            <label class="font-medium">${grade}</label>
+                            <span class="text-sm col-span-2 text-right pr-2">≥ Mean +</span>
+                            <input type="number" id="sd-${cleanGradeId}" value="${defaultSDs[grade]}" step="0.1" class="w-full p-1 border rounded-lg text-center">
+                            <span class="text-sm">SD</span>
+                        </div>
+                    `;
+                });
+                 configHTML += `<p class="text-xs text-slate-500 pt-1">Values can be negative. Remainder get 'F'.</p>`;
+                break;
+            case 'curve_scale':
+                configHTML = `<p class="text-sm text-slate-600 p-4 bg-slate-100 rounded-lg">This method rescales marks from 0-100 and then uses the <span class="font-bold text-indigo-600">'Absolute Cutoffs'</span> sliders for grading. Please adjust the sliders above.</p>`;
+                break;
+        }
+        container.innerHTML = configHTML;
+        updateRelativeInfo(); // Also update cap visibility
+    }
+    
+    // --- APP START ---
+    initializeUI();
+});
+</script>
+<script type="module" src="/index.tsx"></script>
+</body>
 </html>
